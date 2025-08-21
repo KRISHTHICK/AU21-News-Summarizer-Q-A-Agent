@@ -1,0 +1,31 @@
+# agent.py
+from newspaper import Article
+from langchain.llms import Ollama
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
+
+class NewsAgent:
+    def __init__(self, model_name="llama2"):
+        self.llm = Ollama(model=model_name)
+
+        # Template for summarization
+        summary_template = """Summarize this news article into 5 simple bullet points:\n\n{text}"""
+        self.summary_prompt = PromptTemplate(input_variables=["text"], template=summary_template)
+        self.summary_chain = LLMChain(llm=self.llm, prompt=self.summary_prompt)
+
+        # Template for Q&A
+        qa_template = """You are an assistant. Answer the question based on the article:\n\nArticle:\n{text}\n\nQuestion: {question}\nAnswer:"""
+        self.qa_prompt = PromptTemplate(input_variables=["text", "question"], template=qa_template)
+        self.qa_chain = LLMChain(llm=self.llm, prompt=self.qa_prompt)
+
+    def scrape_article(self, url):
+        article = Article(url)
+        article.download()
+        article.parse()
+        return article.text
+
+    def summarize(self, text):
+        return self.summary_chain.run({"text": text})
+
+    def ask_question(self, text, question):
+        return self.qa_chain.run({"text": text, "question": question})
